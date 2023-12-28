@@ -1,7 +1,7 @@
 #!/bin/env python3
 
-from blessed import Terminal
 from copy import copy
+from blessed import Terminal
 
 from tui.components.component import Component
 from tui.components.component_style import Style
@@ -51,18 +51,18 @@ def main():
     viewport = Viewport(0, 0, t.width, t.height)
     window = Window(renderer, viewport, t)
 
-    cont = Component(id="cont", style=cont_style)
+    cont = Component(cid="cont", style=cont_style)
     window.component_tree.add_component(cont)
 
-    box = Component(id="v-box", style=box1_style)
-    box2 = Component(id="h-box", style=box2_style)
+    box = Component(cid="v-box", style=box1_style)
+    box2 = Component(cid="h-box", style=box2_style)
     window.component_tree.add_component(box, "cont")
     window.component_tree.add_component(box2, "v-box")
 
     for i in range(1, 5):
         window.component_tree.add_component(
             Button(text=f"Button {i}",
-                   id=f"Button{i}",
+                   cid=f"Button{i}",
                    style=copy(style2)),
             "v-box"
         )
@@ -75,7 +75,7 @@ def main():
         s.color = RGBA(32, 52, 20, 1)
         window.component_tree.add_component(
             Button(text=f"Button {i}",
-                   id=f"Button{i}",
+                   cid=f"Button{i}",
                    style=s),
             "h-box"
         )

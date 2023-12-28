@@ -33,12 +33,12 @@ class ComponentTreeNode:
 
         return None
 
-    def get_node_by_component_id(self, id: str) -> ComponentTreeNode | None:
-        if self._component.id == id:
+    def get_node_by_component_id(self, cid: str) -> ComponentTreeNode | None:
+        if self._component.cid == cid:
             return self
 
         for child in self._children:
-            node = child.get_node_by_component_id(id)
+            node = child.get_node_by_component_id(cid)
             if node:
                 return node
 
@@ -83,8 +83,8 @@ class ComponentTreeNode:
     def __str__(self):
         lines = [
             "Component tree node:",
-            f"    parent: {self._parent.component.id if self._parent else None}",
-            f"    Children: {[c.component.id for c in self._children]}"
+            f"    parent: {self._parent.component.cid if self._parent else None}",
+            f"    Children: {[c.component.cid for c in self._children]}"
         ]
         lines += [f"    {line}" for line in str(self.component).split("\n")]
 
@@ -99,7 +99,7 @@ class ComponentTree:
         root_style = Style(position="relative", x=0, y=0,
                            width="100%", height="100%")
         self._root = ComponentTreeNode(
-            Component(id="root", style=root_style)
+            Component(cid="root", style=root_style)
         )
 
     def remove_component(self, component: Component) -> None:
@@ -110,8 +110,8 @@ class ComponentTree:
 
         node.parent.children.remove(node)
 
-    def get_component_by_id(self, id: str) -> Component:
-        node = self._root.get_node_by_component_id(id)
+    def get_component_by_id(self, cid: str) -> Component:
+        node = self._root.get_node_by_component_id(cid)
         return node.component if node is not None else None
 
     def add_component(self, component: Component, parent_id: str = None) -> None:

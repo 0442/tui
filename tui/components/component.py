@@ -9,14 +9,14 @@ from .component_style import Style
 class Component(ABC):
     def __init__(
         self, *,
-        id: str = None,
+        cid: str = None,
         text: str = "",
         focusable: bool = False,
         style: Style = None,
     ) -> None:
         super().__init__()
 
-        self._id = id
+        self._cid = cid
         self._text = text
 
         # Changes are made to _resolved_style throughout the "resolution
@@ -58,8 +58,8 @@ class Component(ABC):
         return self._is_focusable
 
     @property
-    def id(self) -> str:
-        return self._id
+    def cid(self) -> str:
+        return self._cid
 
     @property
     def text(self) -> str:
@@ -102,7 +102,7 @@ class Component(ABC):
         rs = self._resolved_style
         lines = [
             "Component",
-            f"    id: {self._id}",
+            f"    cid: {self._cid}",
             "    Style:",
             f"        x,y: ({s.x}, {s.y})",
             f"        w,h: ({s.width}, {s.height})",
