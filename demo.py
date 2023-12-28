@@ -1,19 +1,14 @@
 #!/bin/env python3
 
-from time import sleep, time
 from blessed import Terminal
 from copy import copy
 
 from tui.components.component import Component
 from tui.components.component_style import Style
-from tui.components.component_tree import ComponentTree
 from tui.components.examples.button import Button
-from tui.components.examples.input import Input
-# from rendering.renderer import TerminalRenderer
 from tui.rendering.renderer import TerminalRenderer
 from tui.viewport import Viewport
 from tui.window import Window
-from tui.utils.logger import log
 from tui.color import RGBA
 
 cont_style = Style(
@@ -52,18 +47,17 @@ box2_style.background_color = RGBA(100, 100, 255, 1)
 
 def main():
     t = Terminal()
-    tree = ComponentTree()
+    renderer = TerminalRenderer(t)
     viewport = Viewport(0, 0, t.width, t.height)
-    renderer = TerminalRenderer(tree, t)
-    window = Window(renderer, viewport, tree, t)
+    window = Window(renderer, viewport, t)
 
     cont = Component(id="cont", style=cont_style)
-    tree.add_component(cont)
+    window.component_tree.add_component(cont)
 
     box = Component(id="v-box", style=box1_style)
     box2 = Component(id="h-box", style=box2_style)
-    tree.add_component(box, "cont")
-    tree.add_component(box2, "v-box")
+    window.component_tree.add_component(box, "cont")
+    window.component_tree.add_component(box2, "v-box")
 
     for i in range(1, 5):
         window.component_tree.add_component(
@@ -87,14 +81,6 @@ def main():
         )
 
     window.run()
-
-    """
-    window.component_tree.add_component(
-        Input(id="input1",
-              style=copy(style2)),
-        "cont"
-    )
-    """
 
 
 if __name__ == "__main__":
