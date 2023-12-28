@@ -11,14 +11,16 @@ from ..components.component import Component
 
 class Renderer(ABC):
     @abstractmethod
-    def render(self):
+    def render(self, tree: ComponentTree):
+        pass
+
+    def draw(self):
         pass
 
 
 class TerminalRenderer(Renderer):
     def __init__(self, term: Terminal) -> None:
         self._term = term
-
         self._screen_buffer = StringIO()
 
     def _render_bg(self, component: Component) -> None:
