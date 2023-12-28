@@ -32,12 +32,8 @@ class Component(ABC):
 
         self._event_queue = EventQueue()
 
-        """Rendering related attributes.
-        Might be be moved somewhere else at some point."""
         # Whether `resolved_style` has changed, whether to re-render.
         self._dirty: bool = False
-        # Used for faster re-rendering of non-dirty components
-        self.render_cache = StringIO()
 
         self.set_up()
 
