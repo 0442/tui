@@ -5,6 +5,7 @@ from sys import stdout
 from blessed import Terminal
 from typing import Dict
 
+from ..color import RGBA
 from ..utils.logger import log
 from ..components.component_tree import ComponentTree
 from ..components.component import Component
@@ -24,6 +25,27 @@ class TerminalRenderer(Renderer):
         self._term = term
         self._screen_buffer = StringIO()
         self._cache: Dict[int, StringIO] = {}
+        self._bg_color_cache: Dict[RGBA, str] = {}
+        self._fg_color_cache: Dict[RGBA, str] = {}
+
+    def _get_color(self, color: RGBA):
+        # NOTE: using `setdefault` would be cleaner, but with it the slow
+        # color function would be ran even if the color is cached.
+        c = self._fg_color_cache.get(color, None)
+        if c is None:
+            c = str(self._term.color_rgb(color.r, color.g, color.b))
+            self._fg_color_cache[color] = c
+
+        return c
+
+    def _get_bg_color(self, bg_color: RGBA):
+        c = self._bg_color_cache.get(bg_color, None)
+        if c is None:
+            c = str(self._term.on_color_rgb(bg_color.r, bg_color.g, bg_color.b))
+            self._bg_color_cache[bg_color] = c
+
+        return c
+
 
     def _render_bg(self, component: Component) -> None:
         style = component.resolved_style
@@ -33,12 +55,12 @@ class TerminalRenderer(Renderer):
             return
 
         # Convert to terminal color
-        bg_color = self._term.on_color_rgb(bg_color.r, bg_color.g, bg_color.b)
+        bg_color = self._get_bg_color(bg_color)
 
         x, y = style.x, style.y
         w, h = style.width, style.height
 
-        row = bg_color("".join(" " for _ in range(w)))
+        row = bg_color + "".join(" " for _ in range(w)) + "\x1b[m"
         for i in range(h):
             c = self._term.move_xy(x, y+i) + row
             self._screen_buffer.write(c)
@@ -56,10 +78,10 @@ class TerminalRenderer(Renderer):
         fg_color = style.color
         bg_color = style.background_color
         # Convert to terminal color
-        bg_color = self._term.on_color_rgb(bg_color.r, bg_color.g, bg_color.b)
-        fg_color = self._term.color_rgb(fg_color.r, fg_color.g, fg_color.b)
 
-        content = bg_color(fg_color(self._term.move_xy(x, y) + text))
+        bg_color = self._get_bg_color(bg_color)
+        fg_color = self._get_color(fg_color)
+        content = bg_color + fg_color + self._term.move_xy(x, y) + text + "\x1b[m"
         self._screen_buffer.write(content)
         self._cache[id(component)].write(content)
 
