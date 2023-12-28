@@ -9,9 +9,18 @@ class EventType(Enum):
     FOCUS_OUT = auto()
     ACTIVATE = auto()
     DEACTIVATE = auto()
+
+    UPDATE = auto()
+    KEY_PRESS = auto()
+
     ANY = auto()
 
     def __eq__(self, other):
+        """Adds special functionality for equality checks with event type `ANY`.
+
+        Comparisons between all event types and the event type `ANY` will
+        result in True.
+        """
         if self is EventType.ANY or other is EventType.ANY:
             return True
         return super().__eq__(other)
@@ -27,24 +36,26 @@ class Event:
     can be retrieved e.g. when handling the event.
     """
 
-    def __init__(self, type: EventType, data: int | str | None = None) -> None:
+    def __init__(self, event_type: EventType, data: int | str | None = None) -> None:
         self._data = data
-        self._type = type
+        self._event_type = event_type
 
     @property
     def data(self):
         return self._data
 
     @property
-    def type(self):
-        return self._type
+    def event_type(self):
+        return self._event_type
 
     def __str__(self) -> str:
-        return f"{self._type.name} : {self._data}"
+        return f"{self._event_type.name} : {self._data}"
 
 
 class EventListener:
-    def __init__(self, listening_to: List[EventType] | set[EventType], callback: Callable[[Event], None]) -> None:
+    def __init__(self,
+                 listening_to: List[EventType] | set[EventType],
+                 callback: Callable[[Event], None]) -> None:
         """
         Args:
             event_type (EventType): The event type this
@@ -87,9 +98,19 @@ class EventQueue:
 
     def _notify_listeners(self, event: Event):
         for event_listener in self._event_listeners:
-            if event.type in event_listener.listening_to:
+            if event.event_type in event_listener.listening_to:
                 event_listener.handle_event(event)
 
     def process_events(self):
-        for event in self._event_queue:
+        """Goes through all queued events and "notifies" event listeners of
+        them.
+
+        Only goes through the events that were in the queue at the beginning of
+        running this function. New events added during the processing are
+        processed on the next run.
+        """
+        event = None
+        event_count = len(self._event_queue)
+        for _ in range(event_count):
+            event = self._event_queue.popleft()
             self._notify_listeners(event)
