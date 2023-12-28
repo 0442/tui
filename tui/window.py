@@ -10,10 +10,9 @@ from .focus_manager import FocusManager
 
 
 class Window:
-    def __init__(self, renderer: Renderer, viewport: Viewport,
-                 component_tree: ComponentTree, t: Terminal) -> None:
+    def __init__(self, renderer: Renderer, viewport: Viewport, t: Terminal) -> None:
         self._viewport = viewport
-        self._component_tree = component_tree
+        self._component_tree = ComponentTree()
         self._event_queue = EventQueue()
         self._focus_manager = FocusManager(self._component_tree)
         self._renderer = renderer
@@ -56,7 +55,7 @@ class Window:
         self._viewport.width, self._viewport.height = self._t.width, self._t.height
 
         self._style_resolver.resolve()
-        self._renderer.render()
+        self._renderer.render(self._component_tree)
         self._renderer.draw()
 
     def _handle_key_event(self, event: Event):
