@@ -16,9 +16,8 @@ class Renderer(ABC):
 
 
 class TerminalRenderer(Renderer):
-    def __init__(self, tree: ComponentTree, term: Terminal) -> None:
+    def __init__(self, term: Terminal) -> None:
         self._term = term
-        self._tree = tree
 
         self._screen_buffer = StringIO()
 
@@ -60,12 +59,12 @@ class TerminalRenderer(Renderer):
         self._screen_buffer.write(content)
         component.render_cache.write(content)
 
-    def render(self) -> None:
+    def render(self, tree: ComponentTree) -> None:
         s = time()
         render_count = 0
         self._screen_buffer.seek(0)
 
-        for node in self._tree.traverse():
+        for node in tree.traverse():
             component = node.component
 
             if component.dirty is True:
