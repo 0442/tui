@@ -2,19 +2,19 @@
 ## Installation
 
 1. Clone the repository
-    ```shell
-        git clone "git@github.com:0442/tui.git"
-    ```
+```shell
+git clone "git@github.com:0442/tui.git"
+```
 2. Install dependencies
-    ```shell
-        poetry install
-    ```
+```shell
+poetry install
+```
 
 To run the demo, simply execute the `demo.py` file, e.g. with
-    ```shell
-        ./demo.py
-    ```
+`
+./demo.py
+`
 or
-    ```shell
-        python3 demo.py
-    ```
+`
+python3 demo.py
+`
