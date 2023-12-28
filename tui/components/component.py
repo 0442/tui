@@ -1,6 +1,5 @@
 from __future__ import annotations
 from abc import ABC
-from io import StringIO
 
 from ..events import Event, EventListener, EventQueue
 from .component_style import Style

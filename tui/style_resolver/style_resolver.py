@@ -29,8 +29,6 @@ class StyleResolver:
         Args:
             node (ComponentTreeNode): The node to work on.
         """
-        # axis = parent_node.component.resolved_style.layout_direction
-
         pos = axis
         size = "width" if axis == "x" else "height"
         layout_dir = node.component.style.layout_direction
@@ -131,13 +129,10 @@ class StyleResolver:
 
     def _fit_within_parent(self, node: ComponentTreeNode, axis: Axis):
         # Restrict children's sizes to parent's size
-        # NOTE: earlier in this function recursed to resolve children's widths
-        # so they dont need to be resolved here again.
-        #
         # The children are scale down so that they retain their relative sizes
         # to each other, i.e. a child with width 10 will be 2 times larger than
         # a child with width 5. Min_widths are still respected, children will
-        # overflow if they cannot scale down more.
+        # overflow if they cannot scale down enough.
 
         size_name = "width" if axis == "x" else "height"
         min_size_name = "min_width" if axis == "x" else "min_height"
@@ -212,11 +207,11 @@ class StyleResolver:
 
             new_value = cur_value
 
-            # if cur_value == "inherit":
-            #    new_value = getattr(parent_resolved_style, field.name)
+            if cur_value == "inherit":
+                new_value = parent_value
 
             # Handle relative positioning and sizing
-            if field.name in ("x", "y") and getattr(comp_style, field.name):
+            elif field.name in ("x", "y") and getattr(comp_style, field.name):
                 parent_size = getattr(parent_r_style,
                                       "width" if field.name == "x" else
                                       "height")
@@ -230,8 +225,9 @@ class StyleResolver:
 
         node.component.resolved_style = new_r_style
 
-    # Parts of the resolution pipeline (to be named more descriptive).
-    # Need to be split into parts as direction of tree traversal changes.
+    # Parts of the resolution pipeline.
+    # Need to be split into separate passes as direction of tree
+    # traversal must change.
 
     def _first_pass(self) -> None:
         """Sets initial values for e.g. sizes and positions with percentage

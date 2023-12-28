@@ -9,6 +9,7 @@ if ENABLE_LOGGING is True:
     with open(LOGFILE_PATH, "w", encoding="utf-8") as f:
         pass
 
+
 def log(*args):
     if ENABLE_LOGGING is True:
         with open(LOGFILE_PATH, "a", encoding="utf-8") as file:
