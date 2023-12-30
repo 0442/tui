@@ -41,26 +41,23 @@ class TerminalRenderer(Renderer):
     def _get_bg_color(self, bg_color: RGBA):
         c = self._bg_color_cache.get(bg_color, None)
         if c is None:
-            c = str(self._term.on_color_rgb(bg_color.r, bg_color.g, bg_color.b))
+            c = str(self._term.on_color_rgb(
+                bg_color.r, bg_color.g, bg_color.b))
             self._bg_color_cache[bg_color] = c
 
         return c
 
-
     def _render_bg(self, component: Component) -> None:
         style = component.resolved_style
-
-        bg_color = style.background_color
-        if bg_color.a == 0:
+        if style.background_color.a == 0:
             return
 
-        # Convert to terminal color
-        bg_color = self._get_bg_color(bg_color)
+        bg_color = self._get_bg_color(style.background_color)
 
         x, y = style.x, style.y
         w, h = style.width, style.height
 
-        row = bg_color + "".join(" " for _ in range(w)) + "\x1b[m"
+        row = bg_color + " " * w + "\x1b[m"
         for i in range(h):
             c = self._term.move_xy(x, y+i) + row
             self._screen_buffer.write(c)
@@ -75,13 +72,11 @@ class TerminalRenderer(Renderer):
 
         x, y = style.x, style.y
 
-        fg_color = style.color
-        bg_color = style.background_color
-        # Convert to terminal color
+        fg_color = self._get_color(style.color)
+        bg_color = self._get_bg_color(style.background_color)
 
-        bg_color = self._get_bg_color(bg_color)
-        fg_color = self._get_color(fg_color)
-        content = bg_color + fg_color + self._term.move_xy(x, y) + text + "\x1b[m"
+        content = bg_color + fg_color + \
+            self._term.move_xy(x, y) + text + "\x1b[m"
         self._screen_buffer.write(content)
         self._cache[id(component)].write(content)
 
