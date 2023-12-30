@@ -3,7 +3,8 @@ from time import time
 from typing import List, Self, TypeVar
 from collections.abc import Callable
 from functools import wraps
-from dataclasses import replace, fields
+from dataclasses import replace
+from copy import copy
 
 from ..utils.logger import log
 from ..components.component_tree import ComponentTree, ComponentTreeNode
@@ -29,34 +30,35 @@ class StyleResolver:
         Args:
             node (ComponentTreeNode): The node to work on.
         """
-        pos = axis
+
+        pos_name = axis
         size = "width" if axis == "x" else "height"
         layout_dir = node.component.style.layout_direction
 
-        rl_pos_children: List[ComponentTreeNode] = []
-        for child_node in node.children:
-            if child_node.component.style.position == "relative":
-                rl_pos_children.append(child_node)
+        rl_pos_children: List[ComponentTreeNode] = [
+            child_node for child_node in node.children
+            if child_node.component.style.position == "relative"
+        ]
 
         # Place the components one after the other
-        start_pos = getattr(node.component.resolved_style, pos)
+        start_pos = getattr(node.component.resolved_style, pos_name)
         for child_node in rl_pos_children:
-            new_rstyle = replace(child_node.component.resolved_style)
+            rstyle = child_node.component.resolved_style
 
             if layout_dir == axis:
-                setattr(new_rstyle, pos, start_pos)
-                start_pos += getattr(new_rstyle, size)
+                setattr(rstyle, pos_name, start_pos)
+                start_pos += getattr(rstyle, size)
             else:
-                setattr(new_rstyle,
-                        pos,
-                        getattr(node.component.resolved_style, pos))
-
-            child_node.component.resolved_style = new_rstyle
+                setattr(rstyle,
+                        pos_name,
+                        getattr(node.component.resolved_style, pos_name))
 
     def _get_children_required_size(self, node: ComponentTreeNode, axis: Axis) -> int:
         """Calculates the size(width/height) of the children of a given node,
         in the given axis, take up. (currently just sum of their height/width,
         i.e. size if they are stuck together with no spacing.)
+
+        Only count children using relative positioning
 
         Args:
             node (ComponentTreeNode): The node whose children to calc.
@@ -68,10 +70,10 @@ class StyleResolver:
         layout_dir = node.component.style.layout_direction
         size_name = "width" if axis == "x" else "height"
 
-        layout_dir = node.component.style.layout_direction
-
         children_required_size = 0
         for child_node in node.children:
+            if child_node.component.style.position != "relative":
+                continue
             csz = getattr(child_node.component.resolved_style, size_name)
             if layout_dir == axis:
                 children_required_size += csz
@@ -102,14 +104,14 @@ class StyleResolver:
 
         children_required_size = self._get_children_required_size(node, axis)
 
-        style = node.component.resolved_style
-        sz = getattr(style, size_name)
+        rstyle = node.component.resolved_style
+        sz = getattr(rstyle, size_name)
 
         if axis == "x":
-            s = getattr(style, min_size_name)
+            s = getattr(rstyle, min_size_name)
             min_size = s if s is not None else len(node.component.text)
         else:
-            s = getattr(style, min_size_name)
+            s = getattr(rstyle, min_size_name)
             min_size = (s if s is not None else
                         (1 if node.component.text else 0))
 
@@ -118,11 +120,11 @@ class StyleResolver:
         if sz is not None:
             sz = clamp(min_size,
                        sz,
-                       getattr(style, max_size_name))
+                       getattr(rstyle, max_size_name))
         else:
             sz = clamp(min_size,
                        children_required_size,
-                       getattr(style, max_size_name))
+                       getattr(rstyle, max_size_name))
 
         setattr(node.component.resolved_style, size_name, sz)
         setattr(node.component.resolved_style, min_size_name, min_size)
@@ -162,15 +164,11 @@ class StyleResolver:
         if node.component.style.position != "absolute":
             return
 
-        style = node.component.style
-        rstyle = replace(node.component.resolved_style)
+        rstyle = node.component.resolved_style
+        rstyle.x = rstyle.x or 0
+        rstyle.y = rstyle.y or 0
 
-        rstyle.x = style.x or 0
-        rstyle.y = style.y or 0
-
-        node.component.resolved_style = rstyle
-
-    def _resolve_relative_values(self, node: ComponentTreeNode) -> None:
+    def _resolve_relative_values(self, node: ComponentTreeNode, axis: Axis) -> None:
         """Resolves initial size and position values from strings to numericals.
         These may not be the final values, they might be modified e.g. by min-
         and max-widths and size restrictions by parent components, in later
@@ -179,15 +177,17 @@ class StyleResolver:
         Args:
             node (ComponentTreeNode): The node to work on.
         """
-
         # NOTE: perfomance could be optimized, function could be be ran only
         # for nodes whose parents have changed size or position.
 
-        comp_style = replace(node.component.style)
+        pos_name = axis
+        size_name = "width" if axis == "x" else "height"
+
+        style = node.component.resolved_style
 
         # If root component, values are inherited from viewport.
         if node.parent is None:
-            new_style = replace(comp_style,
+            new_style = replace(style,
                                 x=self._viewport.x,
                                 y=self._viewport.y,
                                 width=self._viewport.width,
@@ -196,34 +196,24 @@ class StyleResolver:
             node.component.resolved_style = new_style
             return
 
-        parent_r_style = replace(node.parent.component.resolved_style)
+        parent_style = node.parent.component.resolved_style
 
-        new_r_style = replace(
-            node.component.resolved_style) if node.component.resolved_style else replace(comp_style)
+        cur_pos = getattr(style, pos_name)
+        cur_size = getattr(style, size_name)
+        parent_pos = getattr(parent_style, pos_name)
+        parent_size = getattr(parent_style, size_name)
 
-        for field in fields(comp_style):
-            cur_value = getattr(comp_style, field.name)
-            parent_value = getattr(parent_r_style, field.name)
+        if cur_pos is not None:
+            new_pos = Position(cur_pos).resolve(parent_pos, parent_size)
+            setattr(style, pos_name, new_pos)
 
-            new_value = cur_value
+        if cur_size is not None:
+            new_size = Size(cur_size).resolve(parent_size)
+            setattr(style, size_name, new_size)
 
-            if cur_value == "inherit":
-                new_value = parent_value
-
-            # Handle relative positioning and sizing
-            elif field.name in ("x", "y") and getattr(comp_style, field.name):
-                parent_size = getattr(parent_r_style,
-                                      "width" if field.name == "x" else
-                                      "height")
-                new_value = Position(cur_value).resolve(parent_value,
-                                                        parent_size)
-
-            elif field.name in ("width", "height") and getattr(comp_style, field.name):
-                new_value = Size(cur_value).resolve(parent_value)
-
-            setattr(new_r_style, field.name, new_value)
-
-        node.component.resolved_style = new_r_style
+    def _set_resolved_style(self, node: ComponentTreeNode):
+        res_style = copy(node.component.style)
+        node.component.resolved_style = res_style
 
     # Parts of the resolution pipeline.
     # Need to be split into separate passes as direction of tree
@@ -235,7 +225,9 @@ class StyleResolver:
         etc.) by subsequent passes.
         """
         for node in self._tree.traverse():
-            self._resolve_relative_values(node)
+            self._set_resolved_style(node)
+            self._resolve_relative_values(node, "x")
+            self._resolve_relative_values(node, "y")
             self._resolve_abs_positions(node)
 
     def _second_pass(self) -> None:
