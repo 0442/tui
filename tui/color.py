@@ -1,5 +1,5 @@
 class RGBA:
-    def __init__(self, r: int, g: int, b: int, a: int) -> None:
+    def __init__(self, r: int, g: int, b: int, a: int = 1) -> None:
         self._validate_rgb(r)
         self._validate_rgb(g)
         self._validate_rgb(b)

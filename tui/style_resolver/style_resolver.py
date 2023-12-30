@@ -294,7 +294,7 @@ class StyleResolver:
         return wrapper
 
     @flag_dirty_components
-    def resolution_pipeline(self) -> None:
+    def _resolution_pipeline(self) -> None:
         """Wraps together all the steps for resolving styles for all nodes'
         components in `self._tree`(ComponentNodeTree). When finished, all
         components have their resolved styles set in their `resolved_style`.
@@ -307,6 +307,6 @@ class StyleResolver:
         """Resolve the styles for all components in tree.
         """
         s = time()
-        self.resolution_pipeline()
+        self._resolution_pipeline()
         e = time()
         log(f"Styles resolved in {e-s} seconds")
