@@ -56,11 +56,12 @@ class RGBA:
 
     def __eq__(self, other) -> bool:
         if isinstance(other, RGBA):
-            return all(getattr(self,name) == getattr(other,name) for name in vars(self))
+            return all(getattr(self, name) == getattr(other, name) for name in vars(self))
         return False
 
     def __hash__(self) -> int:
-        return hash(tuple(getattr(self,name) for name in vars(self)))
+        return hash(tuple(getattr(self, name) for name in vars(self)))
+
 
 class HSL:
     ...

@@ -76,12 +76,16 @@ class Window:
 
             self._is_running = True
             while self._is_running:
-                key = self._t.inkey(0.01)
-                key = key.name if key.name else key
+                key = self._t.inkey(0.02)
+                key = str(key.name) if key.is_sequence else str(key)
 
                 if key:
-                    key_event = Event(EventType.KEY_PRESS, {"key": str(key)})
+                    key_event = Event(EventType.KEY_PRESS, {"key": key})
                     self._event_queue.enqueue_event(key_event)
+
+                    f = self._focus_manager.focused_component
+                    if f is not None:
+                        f.enqueue_event(key_event)
 
                 if self._viewport.width != self._t.width or self._viewport.height != self._t.height:
                     self._event_queue.enqueue_event(Event(EventType.UPDATE))
