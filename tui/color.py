@@ -47,7 +47,7 @@ class RGBA:
 
     @property
     def a(self) -> int:
-        return self._b
+        return self._a
 
     @a.setter
     def a(self, new_value) -> None:
@@ -55,12 +55,30 @@ class RGBA:
         self._a = new_value
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, RGBA):
-            return all(getattr(self, name) == getattr(other, name) for name in vars(self))
-        return False
+        if self is other:
+            return True
+        return isinstance(other, RGBA) and self.r == other.r and self.g == other.g and self.b == other.b and self.a == other.a
 
     def __hash__(self) -> int:
-        return hash(tuple(getattr(self, name) for name in vars(self)))
+        return hash((self._r, self._g, self._b, self._a))
+
+    def __add__(self, other: 'RGBA') -> 'RGBA':
+        oa = other.a
+        r = other.r * oa + int(self._r * (1-oa))
+        g = other.g * oa + int(self._g * (1-oa))
+        b = other.b * oa + int(self._b * (1-oa))
+        return RGBA(r, g, b)
+
+    def merge(self, other: 'RGBA'):
+        oa = other.a
+        if oa == 1:
+            self = other
+        self._r = other.r * oa + int(self._r * (1-oa))
+        self._g = other.g * oa + int(self._g * (1-oa))
+        self._b = other.b * oa + int(self._b * (1-oa))
+
+    def __str__(self):
+        return f"RGBA: ({self._r}, {self._g}, {self._b}, {self._a})"
 
 
 class HSL:
